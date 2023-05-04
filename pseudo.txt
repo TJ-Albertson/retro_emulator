@@ -1,0 +1,53 @@
+
+TMS9918
+	variables
+		Registers
+		VRAM
+
+	functions
+		Write Address
+		Write Data
+		Read Status
+		Read Data
+
+
+
+6502
+	variables
+		Registers
+		RAM
+		ROM
+	
+	functioms
+		if read
+			process instruction
+		
+		if reset
+			perform reset
+
+		if interrupt
+			jump to interrupt
+
+
+main 
+	variables
+		Address Bus
+		Data Bus
+	
+	Draw Ram/Rom/Register labels/backgrounds
+	
+	loop
+		keyboard events
+		update values
+		Draw Register/Memory values
+
+
+
+show RAM/memory arrays with ability to move up/down and jump
+
+
+5 registers (4 + PC)
+
+RAM And Rom 
+
+
