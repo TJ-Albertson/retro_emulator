@@ -60,3 +60,4 @@ SDL texture lifetime
 
 
 	"C:/Users/tjalb/source/repos/retro_emulator/resources/retro_gaming.ttf"
+	"C:/Users/tj.albertson.C-P-U/Documents/CPU-Scripts/retro_emulator/resources/retro_gaming.ttf"

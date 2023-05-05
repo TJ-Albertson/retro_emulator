@@ -9,6 +9,12 @@ const int SCREEN_HEIGHT = 720;
 
 const int REG_BOX_WIDTH = 200;
 const int REG_BOX_HEIGHT = 50;
+const int REG_START_POS_X = 1000;
+const int REG_START_POS_Y = 150;
+
+const int MEMORY_WIDTH = 0;
+const int MEMORY_HEIGHT = 0;
+
 
 SDL_Texture* register_textures[4];
 SDL_Texture* rom_textures[16];
@@ -26,8 +32,41 @@ uint16_t PC = 0x0000;
 uint8_t ROM[32000] = { 0 };
 uint8_t RAM[32000] = { 0 };
 
+
+// update textures
+void update_textures(SDL_Renderer* renderer, TTF_Font* font) {
+
+    int position_y = REG_START_POS_Y + 10;
+    for (int i = 0; i < 4; i++) {
+        
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        SDL_Rect texture_rect = { REG_START_POS_X + 10, position_y, REG_BOX_WIDTH - 5, REG_BOX_HEIGHT - 5 };
+        SDL_RenderFillRect(renderer, &texture_rect);
+
+        SDL_Color color = { 0, 0, 0, 255 };
+        char hex_string[5];
+        sprintf_s(hex_string, sizeof(hex_string), "%04x", PC);
+
+        SDL_Surface* surface = TTF_RenderText_Solid(font, hex_string, color);
+        SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+
+        register_textures[i] = texture;
+
+        SDL_FreeSurface(surface);
+        position_y += 100;
+    }
+    
+
+}
+
 void create_surface(SDL_Renderer* renderer, TTF_Font* font)
 {
+     
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_Rect texture_rect = { 1010, 560, 100, 30 };
+    SDL_RenderFillRect(renderer, &texture_rect);
+
+
     SDL_Color color = { 0, 0, 0, 255 };
 
     char hex_string[5];
@@ -102,19 +141,19 @@ void render_dyanmic_textures(SDL_Renderer* renderer, TTF_Font* font)
 {
 
     // render register textures
-    int startPosY = 150;
+    int position_y = REG_START_POS_Y + 10;
     for (int i = 0; i < 4; i++) {
         int tex_width, tex_height;
         SDL_QueryTexture(register_textures[i], NULL, NULL, &tex_width, &tex_height);
-        SDL_Rect rect = { 1000, startPosY, tex_width, tex_height };
+        SDL_Rect rect = { REG_START_POS_X + 10, position_y, tex_width, tex_height };
         SDL_RenderCopy(renderer, register_textures[i], NULL, &rect);
         //SDL_DestroyTexture(register_textures[i]);
-        startPosY += 100;
+        position_y += 100;
     }
 
     int tex_width, tex_height;
     SDL_QueryTexture(register_textures[4], NULL, NULL, &tex_width, &tex_height);
-    SDL_Rect rect = { 1000, startPosY, tex_width, tex_height };
+    SDL_Rect rect = { REG_START_POS_X + 10, position_y, tex_width, tex_height };
     SDL_RenderCopy(renderer, register_textures[4], NULL, &rect);
     // SDL_DestroyTexture(register_textures[i]);
 
@@ -173,12 +212,16 @@ void create_register(SDL_Renderer* renderer, int x, int y, char* value, TTF_Font
 
 void create_box(SDL_Renderer* renderer, int x, int y, char* label, TTF_Font* font, int width, int height)
 {
-    // Set the box color to gray
-    SDL_SetRenderDrawColor(renderer, 128, 128, 128, 255);
 
-    // Draw the box
-    SDL_Rect box = { x, y, width, height };
-    SDL_RenderFillRect(renderer, &box);
+    // Draw black box for outline
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_Rect black_box = { x, y, width, height };
+    SDL_RenderFillRect(renderer, &black_box);
+    
+    // Draw white one
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    SDL_Rect white_box = { x + 5, y + 5, width - 10, height - 10 };
+    SDL_RenderFillRect(renderer, &white_box);
 
     // Set the label color to black
     SDL_Color color = { 0, 0, 0, 255 };
@@ -220,7 +263,7 @@ int main(int argc, char* argv[])
     }
 
     // Load the font
-    TTF_Font* font = TTF_OpenFont("C:/Users/tjalb/source/repos/retro_emulator/resources/retro_gaming.ttf", 24);
+    TTF_Font* font = TTF_OpenFont("C:/Users/tj.albertson.C-P-U/Documents/CPU-Scripts/retro_emulator/resources/retro_gaming.ttf", 24);
     if (!font) {
         printf("Failed to load font: %s\n", TTF_GetError());
         return 1;
@@ -238,11 +281,11 @@ int main(int argc, char* argv[])
 
     // Static renders
     // Create boxes and labels
-    create_box(renderer, 1000, 150, "A Register", font, REG_BOX_WIDTH, REG_BOX_HEIGHT);
-    create_box(renderer, 1000, 250, "X Register", font, REG_BOX_WIDTH, REG_BOX_HEIGHT);
-    create_box(renderer, 1000, 350, "Y Register", font, REG_BOX_WIDTH, REG_BOX_HEIGHT);
-    create_box(renderer, 1000, 450, "P Register", font, REG_BOX_WIDTH, REG_BOX_HEIGHT);
-    create_box(renderer, 1000, 550, "PC", font, REG_BOX_WIDTH, REG_BOX_HEIGHT);
+    create_box(renderer, REG_START_POS_X, REG_START_POS_Y, "A Register", font, REG_BOX_WIDTH, REG_BOX_HEIGHT);
+    create_box(renderer, REG_START_POS_X, REG_START_POS_Y + 100, "X Register", font, REG_BOX_WIDTH, REG_BOX_HEIGHT);
+    create_box(renderer, REG_START_POS_X, REG_START_POS_Y + 200, "Y Register", font, REG_BOX_WIDTH, REG_BOX_HEIGHT);
+    create_box(renderer, REG_START_POS_X, REG_START_POS_Y + 300, "P Register", font, REG_BOX_WIDTH, REG_BOX_HEIGHT);
+    create_box(renderer, REG_START_POS_X, REG_START_POS_Y + 400, "PC", font, REG_BOX_WIDTH, REG_BOX_HEIGHT);
     create_box(renderer, 525, 150, "RAM", font, 400, 450);
     create_box(renderer, 50, 150, "ROM", font, 400, 450);
 
@@ -270,7 +313,7 @@ int main(int argc, char* argv[])
                     SDL_DestroyTexture(register_textures[4]);
                     printf("Right arrow key pressed\n");
                     PC += 0x0001;
-                    create_surface(renderer, font);
+                    update_textures(renderer, font);
                     printf("PC: %04x\n", PC);
                 }
             }
@@ -278,8 +321,8 @@ int main(int argc, char* argv[])
 
         // Loop
 
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        SDL_RenderClear(renderer);
+        //SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        //SDL_RenderClear(renderer);
 
 
         // Dynamic Renders
