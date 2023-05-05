@@ -50,10 +50,13 @@ show RAM/memory arrays with ability to move up/down and jump
 
 RAM And Rom 
 
-
 SDL texture lifetime
 	create surface
 	create texture
 	free texture
 	render texture
 	free texture
+
+
+
+	"C:/Users/tjalb/source/repos/retro_emulator/resources/retro_gaming.ttf"
