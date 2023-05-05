@@ -15,14 +15,15 @@ const int REG_START_POS_Y = 150;
 const int MEMORY_WIDTH = 0;
 const int MEMORY_HEIGHT = 0;
 
+int rom_location = 0;
+int ram_location = 0;
+
 
 SDL_Texture* register_textures[4];
 SDL_Texture* rom_textures[16];
 SDL_Texture* ram_textures[16];
 
-uint8_t registers[5];
-
-
+uint8_t registers[4] = { 0 };
 uint8_t A = 0x00;
 uint8_t X = 0x01;
 uint8_t Y = 0x02;
@@ -32,31 +33,41 @@ uint16_t PC = 0x0000;
 uint8_t ROM[32000] = { 0 };
 uint8_t RAM[32000] = { 0 };
 
+void update_single_texture(SDL_Renderer* renderer, TTF_Font* font, SDL_Texture* update_texture, uint16_t value, int position_x, int position_y)
+{
+    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
+    SDL_Rect texture_rect = { REG_START_POS_X + 5, position_y, REG_BOX_WIDTH - 10, REG_BOX_HEIGHT - 10 };
+    SDL_RenderFillRect(renderer, &texture_rect);
+
+    SDL_Color color = { 255, 0, 0, 255 };
+    char hex_string[6];
+    sprintf_s(hex_string, sizeof(hex_string), "%04x", value);
+
+    SDL_Surface* surface = TTF_RenderText_Solid(font, hex_string, color);
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+
+    update_texture = texture;
+
+    SDL_FreeSurface(surface);
+}
 
 // update textures
 void update_textures(SDL_Renderer* renderer, TTF_Font* font) {
-
-    int position_y = REG_START_POS_Y + 10;
+    
+    //update registers
+    int position_y = REG_START_POS_Y + 5;
     for (int i = 0; i < 4; i++) {
-        
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        SDL_Rect texture_rect = { REG_START_POS_X + 10, position_y, REG_BOX_WIDTH - 5, REG_BOX_HEIGHT - 5 };
-        SDL_RenderFillRect(renderer, &texture_rect);
-
-        SDL_Color color = { 0, 0, 0, 255 };
-        char hex_string[5];
-        sprintf_s(hex_string, sizeof(hex_string), "%04x", PC);
-
-        SDL_Surface* surface = TTF_RenderText_Solid(font, hex_string, color);
-        SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-
-        register_textures[i] = texture;
-
-        SDL_FreeSurface(surface);
+        update_single_texture(renderer, font, register_textures[i], registers[i], REG_START_POS_X + 10, position_y);
         position_y += 100;
     }
-    
 
+    // ROM
+    /*
+    int position_y = REG_START_POS_Y + 10;
+    for (int i = 0; i < 15; i++) {
+        update_8bit_texture(renderer, font, register_textures[i], registers[i], REG_START_POS_X + 10, position_y);
+        position_y += 100;
+    }*/
 }
 
 void create_surface(SDL_Renderer* renderer, TTF_Font* font)
@@ -65,8 +76,7 @@ void create_surface(SDL_Renderer* renderer, TTF_Font* font)
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_Rect texture_rect = { 1010, 560, 100, 30 };
     SDL_RenderFillRect(renderer, &texture_rect);
-
-
+    
     SDL_Color color = { 0, 0, 0, 255 };
 
     char hex_string[5];
@@ -263,7 +273,7 @@ int main(int argc, char* argv[])
     }
 
     // Load the font
-    TTF_Font* font = TTF_OpenFont("C:/Users/tj.albertson.C-P-U/Documents/CPU-Scripts/retro_emulator/resources/retro_gaming.ttf", 24);
+    TTF_Font* font = TTF_OpenFont("C:/Users/tjalb/source/repos/retro_emulator/resources/retro_gaming.ttf", 24);
     if (!font) {
         printf("Failed to load font: %s\n", TTF_GetError());
         return 1;
@@ -289,9 +299,6 @@ int main(int argc, char* argv[])
     create_box(renderer, 525, 150, "RAM", font, 400, 450);
     create_box(renderer, 50, 150, "ROM", font, 400, 450);
 
-    // Render the scene
-    create_dynamic_textures(renderer, font);
-
     registers[0] = 0x00;
     registers[1] = 0x01;
     registers[2] = 0x02;
@@ -299,6 +306,12 @@ int main(int argc, char* argv[])
     registers[4] = 0x04;
 
 
+
+
+    // Render the scene
+    //create_dynamic_textures(renderer, font);
+
+  
     // Wait for a quit event
     bool quit = false;
     while (!quit) {
@@ -310,9 +323,12 @@ int main(int argc, char* argv[])
             }
             if (event.type == SDL_KEYDOWN) {
                 if (event.key.keysym.sym == SDLK_RIGHT) {
-                    SDL_DestroyTexture(register_textures[4]);
+                    //SDL_DestroyTexture(register_textures[4]);
                     printf("Right arrow key pressed\n");
                     PC += 0x0001;
+                    registers[0] += 0x01;
+                    registers[1] += 0x01;
+                    registers[2] += 0x01;
                     update_textures(renderer, font);
                     printf("PC: %04x\n", PC);
                 }
