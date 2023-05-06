@@ -18,8 +18,11 @@ const int MEMORY_HEIGHT = 0;
 int rom_location = 0;
 int ram_location = 0;
 
+SDL_Color red = { 255, 0, 0, 255 };
+SDL_Color black = { 0, 0, 0, 255 };
+SDL_Color white = { 255, 255, 255, 255 };
 
-SDL_Texture* register_textures[4];
+SDL_Texture* register_textures[5];
 SDL_Texture* rom_textures[16];
 SDL_Texture* ram_textures[16];
 
@@ -33,33 +36,61 @@ uint16_t PC = 0x0000;
 uint8_t ROM[32000] = { 0 };
 uint8_t RAM[32000] = { 0 };
 
-void update_single_texture(SDL_Renderer* renderer, TTF_Font* font, SDL_Texture* update_texture, uint16_t value, int position_x, int position_y)
+void update_uint8_texture(SDL_Renderer* renderer, TTF_Font* font, SDL_Texture** update_texture, uint8_t value, int position_x, int position_y)
 {
     SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
     SDL_Rect texture_rect = { REG_START_POS_X + 5, position_y, REG_BOX_WIDTH - 10, REG_BOX_HEIGHT - 10 };
     SDL_RenderFillRect(renderer, &texture_rect);
 
-    SDL_Color color = { 255, 0, 0, 255 };
-    char hex_string[6];
-    sprintf_s(hex_string, sizeof(hex_string), "%04x", value);
+    char* hex_string = malloc(3);
+    sprintf_s(hex_string, 3, "%02x", value);
 
-    SDL_Surface* surface = TTF_RenderText_Solid(font, hex_string, color);
+    SDL_Surface* surface = TTF_RenderText_Solid(font, hex_string, black);
+
+    free(hex_string);
+
     SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
 
-    update_texture = texture;
+    *update_texture = texture;
+
+    SDL_FreeSurface(surface);
+}
+
+void update_uint16_texture(SDL_Renderer* renderer, TTF_Font* font, SDL_Texture** update_texture, uint16_t value, int position_x, int position_y)
+{
+    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
+    SDL_Rect texture_rect = { REG_START_POS_X + 5, position_y, REG_BOX_WIDTH - 10, REG_BOX_HEIGHT - 10 };
+    SDL_RenderFillRect(renderer, &texture_rect);
+
+    char* hex_string = malloc(5);
+    sprintf_s(hex_string, 5, "%04x", value);
+
+    SDL_Surface* surface = TTF_RenderText_Solid(font, hex_string, black);
+
+    free(hex_string);
+
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+
+    *update_texture = texture;
 
     SDL_FreeSurface(surface);
 }
 
 // update textures
-void update_textures(SDL_Renderer* renderer, TTF_Font* font) {
+void update_all_textures(SDL_Renderer* renderer, TTF_Font* font) {
     
     //update registers
-    int position_y = REG_START_POS_Y + 5;
+    int* position_y = (int*)malloc(sizeof(int));
+    *position_y = REG_START_POS_Y + 5;
     for (int i = 0; i < 4; i++) {
-        update_single_texture(renderer, font, register_textures[i], registers[i], REG_START_POS_X + 10, position_y);
-        position_y += 100;
+        update_uint8_texture(renderer, font, &register_textures[i], registers[i], REG_START_POS_X + 10, *position_y);
+        *position_y += 100;
     }
+
+    // Update PC
+    update_uint16_texture(renderer, font, &register_textures[4], PC, REG_START_POS_X + 10, *position_y);
+
+    free(position_y);
 
     // ROM
     /*
@@ -92,18 +123,14 @@ void create_surface(SDL_Renderer* renderer, TTF_Font* font)
     SDL_FreeSurface(surface);
 }
 
-void create_dynamic_textures(SDL_Renderer* renderer, TTF_Font* font)
+void init_dynamic_textures(SDL_Renderer* renderer, TTF_Font* font)
 {
-
-
     for (int i = 0; i < 4; i++) {
-        SDL_Color color = { 0, 0, 0, 255 };
-
         char hex_string[3];
 
         sprintf_s(hex_string, sizeof(hex_string), "%02x", registers[i]);
 
-        SDL_Surface* surface = TTF_RenderText_Solid(font, hex_string, color);
+        SDL_Surface* surface = TTF_RenderText_Solid(font, hex_string, black);
 
         SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
 
@@ -112,13 +139,11 @@ void create_dynamic_textures(SDL_Renderer* renderer, TTF_Font* font)
         SDL_FreeSurface(surface);
     }
 
-    SDL_Color color = { 0, 0, 0, 255 };
-
     char hex_string[5];
 
     sprintf_s(hex_string, sizeof(hex_string), "%04x", PC);
 
-    SDL_Surface* surface = TTF_RenderText_Solid(font, hex_string, color);
+    SDL_Surface* surface = TTF_RenderText_Solid(font, hex_string, black);
 
     SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
 
@@ -154,9 +179,13 @@ void render_dyanmic_textures(SDL_Renderer* renderer, TTF_Font* font)
     int position_y = REG_START_POS_Y + 10;
     for (int i = 0; i < 4; i++) {
         int tex_width, tex_height;
+
         SDL_QueryTexture(register_textures[i], NULL, NULL, &tex_width, &tex_height);
+
         SDL_Rect rect = { REG_START_POS_X + 10, position_y, tex_width, tex_height };
+
         SDL_RenderCopy(renderer, register_textures[i], NULL, &rect);
+
         //SDL_DestroyTexture(register_textures[i]);
         position_y += 100;
     }
@@ -273,7 +302,7 @@ int main(int argc, char* argv[])
     }
 
     // Load the font
-    TTF_Font* font = TTF_OpenFont("C:/Users/tjalb/source/repos/retro_emulator/resources/retro_gaming.ttf", 24);
+    TTF_Font* font = TTF_OpenFont("C:/Users/tj.albertson.C-P-U/Documents/CPU-Scripts/retro_emulator/resources/retro_gaming.ttf", 24);
     if (!font) {
         printf("Failed to load font: %s\n", TTF_GetError());
         return 1;
@@ -309,7 +338,7 @@ int main(int argc, char* argv[])
 
 
     // Render the scene
-    //create_dynamic_textures(renderer, font);
+    init_dynamic_textures(renderer, font);
 
   
     // Wait for a quit event
@@ -323,13 +352,13 @@ int main(int argc, char* argv[])
             }
             if (event.type == SDL_KEYDOWN) {
                 if (event.key.keysym.sym == SDLK_RIGHT) {
-                    //SDL_DestroyTexture(register_textures[4]);
+                    SDL_DestroyTexture(register_textures[4]);
                     printf("Right arrow key pressed\n");
                     PC += 0x0001;
                     registers[0] += 0x01;
                     registers[1] += 0x01;
                     registers[2] += 0x01;
-                    update_textures(renderer, font);
+                    update_all_textures(renderer, font);
                     printf("PC: %04x\n", PC);
                 }
             }
