@@ -9,8 +9,17 @@ const int SCREEN_HEIGHT = 720;
 
 const int REG_BOX_WIDTH = 200;
 const int REG_BOX_HEIGHT = 50;
+
 const int REG_START_POS_X = 1000;
 const int REG_START_POS_Y = 150;
+
+const int MEM_START_POS_Y = 155;
+
+const int ROM_ADDR_START_POS_X = 60;
+const int ROM_DATA_START_POS_X = 260;
+
+const int RAM_ADDR_START_POS_X = 535;
+const int RAM_DATA_START_POS_X = 735;
 
 const int MEMORY_WIDTH = 0;
 const int MEMORY_HEIGHT = 0;
@@ -26,6 +35,9 @@ SDL_Texture* register_textures[5];
 SDL_Texture* rom_textures[16];
 SDL_Texture* ram_textures[16];
 
+SDL_Texture* rom_addr_textures[16];
+SDL_Texture* ram_addr_textures[16];
+
 uint8_t registers[4] = { 0 };
 uint8_t A = 0x00;
 uint8_t X = 0x01;
@@ -33,13 +45,17 @@ uint8_t Y = 0x02;
 uint8_t P = 0x03;
 uint16_t PC = 0x0000;
 
+const int ROM_SIZE = 32000;
+const int RAM_SIZE = 32000;
+
 uint8_t ROM[32000] = { 0 };
 uint8_t RAM[32000] = { 0 };
 
 void update_uint8_texture(SDL_Renderer* renderer, TTF_Font* font, SDL_Texture** update_texture, uint8_t value, int position_x, int position_y)
 {
+    // draw over text
     SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
-    SDL_Rect texture_rect = { REG_START_POS_X + 5, position_y, REG_BOX_WIDTH - 10, REG_BOX_HEIGHT - 10 };
+    SDL_Rect texture_rect = { position_x, position_y, REG_BOX_WIDTH - 100, REG_BOX_HEIGHT - 25 };
     SDL_RenderFillRect(renderer, &texture_rect);
 
     char* hex_string = malloc(3);
@@ -59,7 +75,7 @@ void update_uint8_texture(SDL_Renderer* renderer, TTF_Font* font, SDL_Texture** 
 void update_uint16_texture(SDL_Renderer* renderer, TTF_Font* font, SDL_Texture** update_texture, uint16_t value, int position_x, int position_y)
 {
     SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
-    SDL_Rect texture_rect = { REG_START_POS_X + 5, position_y, REG_BOX_WIDTH - 10, REG_BOX_HEIGHT - 10 };
+    SDL_Rect texture_rect = { position_x, position_y, REG_BOX_WIDTH - 100, REG_BOX_HEIGHT - 25 };
     SDL_RenderFillRect(renderer, &texture_rect);
 
     char* hex_string = malloc(5);
@@ -83,22 +99,44 @@ void update_all_textures(SDL_Renderer* renderer, TTF_Font* font) {
     int* position_y = (int*)malloc(sizeof(int));
     *position_y = REG_START_POS_Y + 5;
     for (int i = 0; i < 4; i++) {
-        update_uint8_texture(renderer, font, &register_textures[i], registers[i], REG_START_POS_X + 10, *position_y);
+        update_uint8_texture(renderer, font, &register_textures[i], registers[i], REG_START_POS_X + 10, *position_y + 8);
         *position_y += 100;
     }
 
     // Update PC
-    update_uint16_texture(renderer, font, &register_textures[4], PC, REG_START_POS_X + 10, *position_y);
+    update_uint16_texture(renderer, font, &register_textures[4], PC, REG_START_POS_X + 10, *position_y + 8);
+
+    // create rom textures
+    *position_y = REG_START_POS_Y + 10;
+    for (int i = 0; i < 15; i++) {
+        update_uint8_texture(renderer, font, &rom_textures[i], ROM[rom_location + i], ROM_DATA_START_POS_X, *position_y);
+        *position_y += 29;
+    }
+
+    // create rom addr textures
+    *position_y = REG_START_POS_Y + 10;
+    for (int i = 0; i < 15; i++) {
+        uint16_t myUint16 = (uint16_t)(rom_location + i);
+        update_uint16_texture(renderer, font, &rom_addr_textures[i], myUint16, ROM_ADDR_START_POS_X, *position_y);
+        *position_y += 29;
+    }
+
+    // create ram textures
+    *position_y = REG_START_POS_Y + 10;
+    for (int i = 0; i < 15; i++) {
+        update_uint8_texture(renderer, font, &ram_textures[i], RAM[ram_location + i], RAM_DATA_START_POS_X, *position_y);
+        *position_y += 29;
+    }
+
+    // create ram addr textures
+    *position_y = REG_START_POS_Y + 10;
+    for (int i = 0; i < 15; i++) {
+        uint16_t myUint16 = (uint16_t)(ram_location + i);
+        update_uint16_texture(renderer, font, &ram_addr_textures[i], myUint16, RAM_ADDR_START_POS_X, *position_y);
+        *position_y += 29;
+    }
 
     free(position_y);
-
-    // ROM
-    /*
-    int position_y = REG_START_POS_Y + 10;
-    for (int i = 0; i < 15; i++) {
-        update_8bit_texture(renderer, font, register_textures[i], registers[i], REG_START_POS_X + 10, position_y);
-        position_y += 100;
-    }*/
 }
 
 void create_surface(SDL_Renderer* renderer, TTF_Font* font)
@@ -173,54 +211,61 @@ void init_dynamic_textures(SDL_Renderer* renderer, TTF_Font* font)
 
 // rom/ram/register values
 void render_dyanmic_textures(SDL_Renderer* renderer, TTF_Font* font)
-{
+{   
+    int tex_width, tex_height;
 
     // render register textures
     int position_y = REG_START_POS_Y + 10;
     for (int i = 0; i < 4; i++) {
-        int tex_width, tex_height;
-
         SDL_QueryTexture(register_textures[i], NULL, NULL, &tex_width, &tex_height);
 
         SDL_Rect rect = { REG_START_POS_X + 10, position_y, tex_width, tex_height };
 
         SDL_RenderCopy(renderer, register_textures[i], NULL, &rect);
 
-        //SDL_DestroyTexture(register_textures[i]);
         position_y += 100;
     }
 
-    int tex_width, tex_height;
+    // render pc
     SDL_QueryTexture(register_textures[4], NULL, NULL, &tex_width, &tex_height);
     SDL_Rect rect = { REG_START_POS_X + 10, position_y, tex_width, tex_height };
     SDL_RenderCopy(renderer, register_textures[4], NULL, &rect);
-    // SDL_DestroyTexture(register_textures[i]);
 
-
-
-    /*
-    // render rom textures
-    startPosY = 150;
+    // render rom data textures
+    position_y = MEM_START_POS_Y;
     for (int i = 0; i < 15; i++) {
-        int tex_width, tex_height;
         SDL_QueryTexture(rom_textures[i], NULL, NULL, &tex_width, &tex_height);
-        SDL_Rect rect = { 50, startPosY, tex_width, tex_height };
+        SDL_Rect rect = { ROM_DATA_START_POS_X, position_y, tex_width, tex_height };
         SDL_RenderCopy(renderer, rom_textures[i], NULL, &rect);
-        //SDL_DestroyTexture(rom_textures[i]);
-        startPosY += 20;
+        position_y += 29;
     }
 
-    // render ram textures
-    startPosY = 150;
+    // render rom adr textures
+    position_y = MEM_START_POS_Y;
     for (int i = 0; i < 15; i++) {
-        int tex_width, tex_height;
-        SDL_QueryTexture(ram_textures[i], NULL, NULL, &tex_width, &tex_height);
-        SDL_Rect rect = { 525, startPosY, tex_width, tex_height };
-        SDL_RenderCopy(renderer, ram_textures[i], NULL, &rect);
-        //SDL_DestroyTexture(ram_textures[i]);
-        startPosY += 20;
+        SDL_QueryTexture(rom_addr_textures[i], NULL, NULL, &tex_width, &tex_height);
+        SDL_Rect rect = { ROM_ADDR_START_POS_X, position_y, tex_width, tex_height };
+        SDL_RenderCopy(renderer, rom_addr_textures[i], NULL, &rect);
+        position_y += 29;
     }
-    */
+
+    // render ram data textures
+    position_y = MEM_START_POS_Y;
+    for (int i = 0; i < 15; i++) {
+        SDL_QueryTexture(ram_textures[i], NULL, NULL, &tex_width, &tex_height);
+        SDL_Rect rect = { RAM_DATA_START_POS_X, position_y, tex_width, tex_height };
+        SDL_RenderCopy(renderer, ram_textures[i], NULL, &rect);
+        position_y += 29;
+    }
+
+    // render ram addr textures
+    position_y = MEM_START_POS_Y;
+    for (int i = 0; i < 15; i++) {
+        SDL_QueryTexture(ram_addr_textures[i], NULL, NULL, &tex_width, &tex_height);
+        SDL_Rect rect = { RAM_ADDR_START_POS_X, position_y, tex_width, tex_height };
+        SDL_RenderCopy(renderer, ram_addr_textures[i], NULL, &rect);
+        position_y += 29;
+    }
 }
 
 void destroy_dynamic_textures()
@@ -302,7 +347,7 @@ int main(int argc, char* argv[])
     }
 
     // Load the font
-    TTF_Font* font = TTF_OpenFont("C:/Users/tj.albertson.C-P-U/Documents/CPU-Scripts/retro_emulator/resources/retro_gaming.ttf", 24);
+    TTF_Font* font = TTF_OpenFont("C:/Users/tjalb/source/repos/retro_emulator/resources/retro_gaming.ttf", 24);
     if (!font) {
         printf("Failed to load font: %s\n", TTF_GetError());
         return 1;
@@ -325,6 +370,7 @@ int main(int argc, char* argv[])
     create_box(renderer, REG_START_POS_X, REG_START_POS_Y + 200, "Y Register", font, REG_BOX_WIDTH, REG_BOX_HEIGHT);
     create_box(renderer, REG_START_POS_X, REG_START_POS_Y + 300, "P Register", font, REG_BOX_WIDTH, REG_BOX_HEIGHT);
     create_box(renderer, REG_START_POS_X, REG_START_POS_Y + 400, "PC", font, REG_BOX_WIDTH, REG_BOX_HEIGHT);
+
     create_box(renderer, 525, 150, "RAM", font, 400, 450);
     create_box(renderer, 50, 150, "ROM", font, 400, 450);
 
@@ -335,11 +381,13 @@ int main(int argc, char* argv[])
     registers[4] = 0x04;
 
 
+    ROM[30] = 0x01;
 
 
     // Render the scene
-    init_dynamic_textures(renderer, font);
+    // init_dynamic_textures(renderer, font);
 
+    update_all_textures(renderer, font);
   
     // Wait for a quit event
     bool quit = false;
@@ -352,14 +400,24 @@ int main(int argc, char* argv[])
             }
             if (event.type == SDL_KEYDOWN) {
                 if (event.key.keysym.sym == SDLK_RIGHT) {
-                    SDL_DestroyTexture(register_textures[4]);
                     printf("Right arrow key pressed\n");
                     PC += 0x0001;
                     registers[0] += 0x01;
                     registers[1] += 0x01;
                     registers[2] += 0x01;
+                    registers[3] += 0x01;
                     update_all_textures(renderer, font);
                     printf("PC: %04x\n", PC);
+                }
+                if (event.key.keysym.sym == SDLK_DOWN) {
+                    printf("Down arrow key pressed\n");
+                    if (rom_location < ROM_SIZE) rom_location += 1;  
+                    update_all_textures(renderer, font);
+                }
+                if (event.key.keysym.sym == SDLK_UP) {
+                    printf("Up arrow key pressed\n");
+                    if (rom_location > 0) rom_location -= 1;
+                    update_all_textures(renderer, font);
                 }
             }
         }
