@@ -53,6 +53,7 @@ uint8_t RAM[32000] = { 0 };
 
 void update_uint8_texture(SDL_Renderer* renderer, TTF_Font* font, SDL_Texture** update_texture, uint8_t value, int position_x, int position_y)
 {
+    
     // draw over text
     SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
     SDL_Rect texture_rect = { position_x, position_y, REG_BOX_WIDTH - 100, REG_BOX_HEIGHT - 25 };
@@ -67,6 +68,7 @@ void update_uint8_texture(SDL_Renderer* renderer, TTF_Font* font, SDL_Texture** 
 
     SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
 
+    SDL_DestroyTexture(*update_texture);
     *update_texture = texture;
 
     SDL_FreeSurface(surface);
@@ -87,12 +89,12 @@ void update_uint16_texture(SDL_Renderer* renderer, TTF_Font* font, SDL_Texture**
 
     SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
 
+    SDL_DestroyTexture(*update_texture);
     *update_texture = texture;
 
     SDL_FreeSurface(surface);
 }
 
-// update textures
 void update_all_textures(SDL_Renderer* renderer, TTF_Font* font) {
     
     //update registers
@@ -139,77 +141,6 @@ void update_all_textures(SDL_Renderer* renderer, TTF_Font* font) {
     free(position_y);
 }
 
-void create_surface(SDL_Renderer* renderer, TTF_Font* font)
-{
-     
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_Rect texture_rect = { 1010, 560, 100, 30 };
-    SDL_RenderFillRect(renderer, &texture_rect);
-    
-    SDL_Color color = { 0, 0, 0, 255 };
-
-    char hex_string[5];
-
-    sprintf_s(hex_string, sizeof(hex_string), "%04x", PC);
-
-    SDL_Surface* surface = TTF_RenderText_Solid(font, hex_string, color);
-
-    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-
-    register_textures[4] = texture;
-
-    SDL_FreeSurface(surface);
-}
-
-void init_dynamic_textures(SDL_Renderer* renderer, TTF_Font* font)
-{
-    for (int i = 0; i < 4; i++) {
-        char hex_string[3];
-
-        sprintf_s(hex_string, sizeof(hex_string), "%02x", registers[i]);
-
-        SDL_Surface* surface = TTF_RenderText_Solid(font, hex_string, black);
-
-        SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-
-        register_textures[i] = texture;
-
-        SDL_FreeSurface(surface);
-    }
-
-    char hex_string[5];
-
-    sprintf_s(hex_string, sizeof(hex_string), "%04x", PC);
-
-    SDL_Surface* surface = TTF_RenderText_Solid(font, hex_string, black);
-
-    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-
-    register_textures[4] = texture;
-
-    SDL_FreeSurface(surface);
-
-
-    /*
-    for (int i = 0; i < 15; i++) {
-        SDL_Color color = { 0, 0, 0, 255 };
-
-        char hex_string[3];
-
-        sprintf(hex_string, "%02x", rom_textures[i]);
-
-        SDL_Surface* surface = TTF_RenderText_Solid(font, hex_string, color);
-
-        SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-
-        rom_textures[i] = texture;
-
-        SDL_FreeSurface(surface);
-    }
-    */
-}
-
-// rom/ram/register values
 void render_dyanmic_textures(SDL_Renderer* renderer, TTF_Font* font)
 {   
     int tex_width, tex_height;
@@ -270,28 +201,6 @@ void render_dyanmic_textures(SDL_Renderer* renderer, TTF_Font* font)
 
 void destroy_dynamic_textures()
 {
-}
-
-void create_register(SDL_Renderer* renderer, int x, int y, char* value, TTF_Font* font, int width, int height)
-{
-
-    // value -> surface -> texture
-
-    // texture & rect = render
-
-    SDL_Color color = { 0, 0, 0, 255 };
-
-    SDL_Surface* surface = TTF_RenderText_Solid(font, value, color);
-
-    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-
-    // rect just
-    SDL_Rect rect = { 0, 0, surface->w, surface->h };
-
-    SDL_RenderCopy(renderer, texture, NULL, &rect);
-
-    SDL_FreeSurface(surface);
-    // SDL_DestroyTexture(texture);
 }
 
 void create_box(SDL_Renderer* renderer, int x, int y, char* label, TTF_Font* font, int width, int height)
@@ -374,18 +283,9 @@ int main(int argc, char* argv[])
     create_box(renderer, 525, 150, "RAM", font, 400, 450);
     create_box(renderer, 50, 150, "ROM", font, 400, 450);
 
-    registers[0] = 0x00;
-    registers[1] = 0x01;
-    registers[2] = 0x02;
-    registers[3] = 0x03;
-    registers[4] = 0x04;
-
 
     ROM[30] = 0x01;
-
-
     // Render the scene
-    // init_dynamic_textures(renderer, font);
 
     update_all_textures(renderer, font);
   
