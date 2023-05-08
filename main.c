@@ -59,12 +59,10 @@ void update_uint8_texture(SDL_Renderer* renderer, TTF_Font* font, SDL_Texture** 
     SDL_Rect texture_rect = { position_x, position_y, REG_BOX_WIDTH - 100, REG_BOX_HEIGHT - 25 };
     SDL_RenderFillRect(renderer, &texture_rect);
 
-    char* hex_string = malloc(3);
-    sprintf_s(hex_string, 3, "%02x", value);
+    char* hex_string[3];
+    sprintf_s(hex_string, sizeof(hex_string), "%02x", value);
 
     SDL_Surface* surface = TTF_RenderText_Solid(font, hex_string, black);
-
-    free(hex_string);
 
     SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
 
@@ -80,12 +78,10 @@ void update_uint16_texture(SDL_Renderer* renderer, TTF_Font* font, SDL_Texture**
     SDL_Rect texture_rect = { position_x, position_y, REG_BOX_WIDTH - 100, REG_BOX_HEIGHT - 25 };
     SDL_RenderFillRect(renderer, &texture_rect);
 
-    char* hex_string = malloc(5);
-    sprintf_s(hex_string, 5, "%04x", value);
+    char* hex_string[5];
+    sprintf_s(hex_string, sizeof(hex_string), "%04x", value);
 
     SDL_Surface* surface = TTF_RenderText_Solid(font, hex_string, black);
-
-    free(hex_string);
 
     SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
 
