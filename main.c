@@ -75,7 +75,7 @@ void update_uint8_texture(SDL_Renderer* renderer, TTF_Font* font, SDL_Texture** 
 {
     
     // draw over text
-    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_Rect texture_rect = { position_x, position_y, REG_BOX_WIDTH - 100, REG_BOX_HEIGHT - 25 };
     SDL_RenderFillRect(renderer, &texture_rect);
 
@@ -94,7 +94,7 @@ void update_uint8_texture(SDL_Renderer* renderer, TTF_Font* font, SDL_Texture** 
 
 void update_uint16_texture(SDL_Renderer* renderer, TTF_Font* font, SDL_Texture** update_texture, uint_least16_t value, int position_x, int position_y)
 {
-    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255);
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
     SDL_Rect texture_rect = { position_x, position_y, REG_BOX_WIDTH - 100, REG_BOX_HEIGHT - 25 };
     SDL_RenderFillRect(renderer, &texture_rect);
 
@@ -131,7 +131,7 @@ void update_all_textures(SDL_Renderer* renderer, TTF_Font* font) {
     update_uint8_texture(renderer, font, &register_textures[3], stkp, REG_START_POS_X + 10, *position_y + 8);
     *position_y += 100;
 
-    // Update PC
+    // Update PCs
     update_uint16_texture(renderer, font, &register_textures[4], pc, REG_START_POS_X + 10, *position_y + 8);
 
 
@@ -303,14 +303,14 @@ int main(int argc, char* argv[])
     }
 
     // Load the font
-    TTF_Font* font = TTF_OpenFont("C:/Users/tj.albertson.C-P-U/Documents/CPU-Scripts/retro_emulator/resources/retro_gaming.ttf", 24);
+    TTF_Font* font = TTF_OpenFont("C:/Users/tjalb/source/repos/retro_emulator/resources/retro_gaming.ttf", 24);
     if (!font) {
         printf("Failed to load font: %s\n", TTF_GetError());
         return 1;
     }
 
     // Create a window
-    SDL_Window* window = SDL_CreateWindow("Box Demo", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+    SDL_Window* window = SDL_CreateWindow("6502 Emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
 
     // Create a renderer
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
@@ -327,8 +327,10 @@ int main(int argc, char* argv[])
     create_box(renderer, REG_START_POS_X, REG_START_POS_Y + 300, "STKP Register", font, REG_BOX_WIDTH, REG_BOX_HEIGHT);
     create_box(renderer, REG_START_POS_X, REG_START_POS_Y + 400, "PC", font, REG_BOX_WIDTH, REG_BOX_HEIGHT);
 
-    create_box(renderer, 525, 150, "RAM", font, 400, 450);
-    create_box(renderer, 50, 150, "RAM 00 ", font, 400, 450);
+    create_box(renderer, 525, 150, "ROM", font, 400, 450);
+    create_box(renderer, 50, 150, "RAM", font, 400, 450);
+
+    create_box(renderer, 475, 50, "6502 Emulator", font, 400, 10);
 
 
     ROM[30] = 0x01;
@@ -369,7 +371,7 @@ int main(int argc, char* argv[])
                     update_all_textures(renderer, font);
                 }
                 if (event.key.keysym.sym == SDLK_SPACE) {
-                    printf("Space key pressed\n");
+                    //printf("Space key pressed\n");
                     do
                     {
                         clock();
